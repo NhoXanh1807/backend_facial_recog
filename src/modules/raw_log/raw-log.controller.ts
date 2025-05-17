@@ -1,7 +1,7 @@
-import { Controller, Get, Query, Param, ParseIntPipe } from '@nestjs/common';
+import { Post,Controller, Get, Query, Param, ParseIntPipe,Body } from '@nestjs/common';
 import { RawLogService } from './raw-log.service';
 import { Cron } from '@nestjs/schedule';
-
+import { EditClockInDto, EditClockOutDto } from './edit-clock.dto';
 interface WorkStatsResult {
   employeeId: string;
   name: string;
@@ -44,4 +44,25 @@ export class RawLogController {
     const endDate = new Date(endDateStr);
     return this.rawLogService.getWorkStats(startDate, endDate, employeeId);
   }
+
+@Post('edit-clock-in')
+async editClockIn(@Body() body: EditClockInDto) {
+  const success = await this.rawLogService.updateClockIn(
+    body.employeeId,
+    new Date(body.date),
+    body.newClockIn,
+  );
+  return { success };
+}
+
+@Post('edit-clock-out')
+async editClockOut(@Body() body: EditClockOutDto) {
+  const success = await this.rawLogService.updateClockOut(
+    body.employeeId,
+    new Date(body.date),
+    body.newClockOut,
+  );
+  return { success };
+}
+
 }

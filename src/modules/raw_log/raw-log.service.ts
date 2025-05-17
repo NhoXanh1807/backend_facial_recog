@@ -4,7 +4,7 @@ import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import { RawLogDocument } from './raw-log.schema';
 import * as moment from 'moment';
-
+import { EditClockInDto, EditClockOutDto } from './edit-clock.dto';
 interface WorkStatsResult {
   employeeId: string;
   name: string;
@@ -229,5 +229,44 @@ export class RawLogService {
   }
   
   
-  
+  async updateClockIn(employeeId: string, date: Date, newClockIn: string): Promise<boolean> {
+  const collectionName = `raw_log_${date.getDate().toString().padStart(2, '0')}_${(date.getMonth() + 1).toString().padStart(2, '0')}_${date.getFullYear()}`;
+  if (!(await this.collectionExists(collectionName))) return false;
+
+const collection = this.connection.db!.collection(collectionName);
+ const result = await collection.updateOne(
+  { "Employer ID": Number(employeeId) },
+  { $set: { "Clock In": newClockIn } }
+);
+const doc = await collection.findOne({ "Employer ID": Number(employeeId) });
+if (!doc) return false;
+
+if (doc["Clock Out"] && newClockIn > doc["Clock Out"]) {
+  console.warn("Clock In phải nhỏ hơn Clock Out");
+  return false;
+}
+
+  return result.modifiedCount > 0;
+}
+
+async updateClockOut(employeeId: string, date: Date, newClockOut: string): Promise<boolean> {
+  const collectionName = `raw_log_${date.getDate().toString().padStart(2, '0')}_${(date.getMonth() + 1).toString().padStart(2, '0')}_${date.getFullYear()}`;
+  if (!(await this.collectionExists(collectionName))) return false;
+
+  const collection = this.connection.db!.collection(collectionName);
+ const result = await collection.updateOne(
+  { "Employer ID": Number(employeeId) },
+  { $set: { "Clock Out": newClockOut } }
+);
+const doc = await collection.findOne({ "Employer ID": Number(employeeId) });
+if (!doc) return false;
+
+if (doc["Clock In"] && newClockOut < doc["Clock In"]) {
+  console.warn("Clock Out phải lớn hơn Clock In");
+  return false;
+}
+
+  return result.modifiedCount > 0;
+}
+
 }
